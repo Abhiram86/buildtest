@@ -1,6 +1,6 @@
 export default function AuthModalContent() {
   return (
-    <div className="text-smoky space-y-2">
+    <div className="text-smoky max-w-44 space-y-2">
       <p>Continue with</p>
       <button
         id="load"

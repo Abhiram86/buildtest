@@ -1,11 +1,47 @@
 import Groq from "groq-sdk";
 import dotenv from "dotenv";
+import crypto from "crypto";
 
 dotenv.config();
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
+
+export function encrypt(text: string) {
+  const iv = crypto.randomBytes(Number(process.env.IV_LENGTH));
+  const cipher = crypto.createCipheriv(
+    "aes-256-gcm",
+    Buffer.from(process.env.ENCRYPTION_KEY!, "base64"),
+    iv
+  );
+
+  let encrypted = cipher.update(text, "utf8", "hex");
+  encrypted += cipher.final("hex");
+
+  const authTag = cipher.getAuthTag().toString("hex");
+
+  return `${iv.toString("hex")}:${encrypted}:${authTag}`;
+}
+
+export function decrypt(encryptedData: string) {
+  const [ivHex, encrypted, authTagHex] = encryptedData.split(":");
+
+  const iv = Buffer.from(ivHex, "hex");
+  const authTag = Buffer.from(authTagHex, "hex");
+
+  const decipher = crypto.createDecipheriv(
+    "aes-256-gcm",
+    Buffer.from(process.env.ENCRYPTION_KEY!, "base64"),
+    iv
+  );
+  decipher.setAuthTag(authTag);
+
+  let decrypted = decipher.update(encrypted, "hex", "utf8");
+  decrypted += decipher.final("utf8");
+
+  return decrypted;
+}
 
 export async function getFileContent(
   owner: string,

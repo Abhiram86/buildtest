@@ -2,6 +2,7 @@ import * as arctic from "arctic";
 import { Request } from "express";
 import { github } from "../../config/github";
 import { User } from "../../database/models/user.model";
+import { encrypt } from "../../common/utils";
 
 export const githubOauth = (req: Request) => {
   const state = arctic.generateState();
@@ -27,11 +28,11 @@ export const callback = async (code: any) => {
       githubUsername: userObj.login,
       email: userObj.email,
       githubAvatarUrl: userObj.avatar_url,
-      githubAccessToken: accessToken,
+      githubAccessToken: encrypt(accessToken),
     });
     await user.save();
   } else {
-    user.githubAccessToken = accessToken;
+    user.githubAccessToken = encrypt(accessToken);
     await user.save();
   }
 

@@ -62,6 +62,7 @@ function App() {
       // Prepare both requests
       const repoFetch = fetch(`http://localhost:8080/github/repos/${repo}`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -96,7 +97,9 @@ function App() {
       setOwner(owner);
       setRepo(repo);
       setDefaultBranch(data.repo.defaultBranch);
-      setTreeData(convertChildrenToMap(data.repo.repo));
+      const structuredData = convertChildrenToMap(data.repo.repo);
+      setTreeData(structuredData);
+      // console.log(structuredData, data.repo.repo);
 
       setStatus(
         `Loaded repository ${owner}/${repo}@${data.repo.defaultBranch}`
@@ -118,7 +121,7 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row lg:divide-x divide-main">
+    <div className="flex flex-col lg:flex-row lg:divide-x divide-main lg:h-[calc(100vh-4.5rem)]">
       <div className="lg:w-1/2 container mx-auto p-4 max-w-6xl overflow-y-auto">
         <Header
           title="Build Test Suites Using Large Language Models"
@@ -158,10 +161,10 @@ function App() {
         </section>
         <div className="status mt-3 text-gray-500">{status}</div>
       </div>
-      <div className="lg:w-1/2 p-4">
-        <div className="sticky top-20">
-          <GeneratedTest />
-        </div>
+      <div className="lg:w-1/2 p-4 overflow-y-auto">
+        {/* <div className="sticky top-20"> */}
+        <GeneratedTest />
+        {/* </div> */}
       </div>
     </div>
   );

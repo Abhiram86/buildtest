@@ -12,7 +12,7 @@ export default function Modal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-[calc(100vw-2rem)] rounded-xl ring ring-main flex items-center justify-center z-30 bg-zinc-900 h-[calc(100vh-24rem)]"
+        className="w-[calc(100vw-2rem)] rounded-xl ring ring-main flex items-center justify-center z-30 bg-zinc-900 h-[calc(100vh-24rem)] max-w-lg"
       >
         {children}
       </div>

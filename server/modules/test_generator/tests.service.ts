@@ -22,13 +22,8 @@ export const createTest = async (
   userId: mongoose.Types.ObjectId,
   accessToken: string
 ) => {
-  const test = new Test({
-    name: "test",
-    repo,
-    user: userId,
-    filePaths,
-    test_response: "",
-  });
+  const existingTest = await Test.findOne({ user: userId, repo });
+
   const contents = await Promise.all(
     filePaths.map(
       async (filePath) =>
@@ -46,6 +41,30 @@ export const createTest = async (
   if (response.choices.length === 0 || !response.choices[0].message.content) {
     return { error: "Error generating test" };
   }
+
+  if (existingTest) {
+    try {
+      const testJson = JSON.parse(response.choices[0].message.content);
+      existingTest.test_response = testJson;
+      await existingTest.save();
+      return {
+        repo: existingTest.repo,
+        filePaths: existingTest.filePaths,
+        test_response: testJson,
+      };
+    } catch (error) {
+      console.error(error);
+      return { error: "Error generating test" };
+    }
+  }
+
+  const test = new Test({
+    name: "test",
+    repo,
+    user: userId,
+    filePaths,
+    test_response: "",
+  });
   test.test_response = response.choices[0].message.content;
   try {
     const testJson = JSON.parse(response.choices[0].message.content);

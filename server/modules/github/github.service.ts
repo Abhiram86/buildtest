@@ -17,19 +17,21 @@ interface TreeData {
 }
 
 export const getRepo = async (
-  username: string,
+  owner: string,
   repo: string,
   defaultBranch: string,
   accessToken: string
 ): Promise<{ repo: TreeData; defaultBranch: string }> => {
   try {
+    const headers = {
+      Accept: "application/vnd.github.v3+json",
+    };
+    accessToken.length > 0 &&
+      ((headers as any).Authorization = `Bearer ${accessToken}`);
     const branchResp = await fetch(
-      `https://api.github.com/repos/${username}/${repo}/branches/${defaultBranch}`,
+      `https://api.github.com/repos/${owner}/${repo}/branches/${defaultBranch}`,
       {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: "application/vnd.github.v3+json",
-        },
+        headers,
       }
     );
     if (!branchResp.ok) {
@@ -43,12 +45,9 @@ export const getRepo = async (
 
     // Fetch tree recursively
     const treeResp = await fetch(
-      `https://api.github.com/repos/${username}/${repo}/git/trees/${treeSha}?recursive=1`,
+      `https://api.github.com/repos/${owner}/${repo}/git/trees/${treeSha}?recursive=1`,
       {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: "application/vnd.github.v3+json",
-        },
+        headers,
       }
     );
     if (!treeResp.ok) {

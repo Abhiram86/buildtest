@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Node } from "./Node";
 import { useTestSuite } from "@/context/TestSuite";
 
@@ -12,16 +12,19 @@ interface TreeProps {
 export const Tree = ({ root, owner, repo, defaultBranch }: TreeProps) => {
   const selectedFiles = useRef(new Set<string>());
   const [, forceUpdate] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { testSuite, setTestSuite } = useTestSuite();
 
-  if (testSuite) {
-    if ("error" in testSuite) return;
-    testSuite.filePaths.forEach((path: string) => {
-      selectedFiles.current.add(path);
-    });
-  }
+  useEffect(() => {
+    if (testSuite && !("error" in testSuite)) {
+      testSuite.filePaths.forEach((path) => {
+        selectedFiles.current.add(path);
+      });
+    }
+  }, [testSuite]);
 
   const handleGenerateTest = async () => {
+    setLoading(true);
     const resp = await fetch(
       `${import.meta.env.VITE_API_URL}/tests/${owner}/${repo}`,
       {
@@ -39,9 +42,11 @@ export const Tree = ({ root, owner, repo, defaultBranch }: TreeProps) => {
     );
     if (resp.ok) {
       const data = await resp.json();
+      setLoading(false);
       setTestSuite(data);
     } else {
       console.log(resp.status, resp.statusText);
+      setLoading(false);
       alert("Failed to generate test suite.");
     }
   };
@@ -70,13 +75,16 @@ export const Tree = ({ root, owner, repo, defaultBranch }: TreeProps) => {
       </div>
       <button
         id="generate"
-        disabled={selectedFiles.current.size === 0}
+        disabled={selectedFiles.current.size === 0 || loading}
         onClick={handleGenerateTest}
-        className="btn w-full disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500 disabled:bg-none cursor-pointer active:scale-98 transition-transform bg-gradient-to-br from-[#FF7E5F] via-[#FEB47B] to-[#9333EA]
+        className="btn w-full disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-400 disabled:bg-none cursor-pointer active:scale-98 transition-transform bg-gradient-to-br from-[#FF7E5F] via-[#FEB47B] to-[#9333EA]
     bg-[length:_200%_200%]
-    animate-gradient-bg text-black text-sm px-5 py-2.5 rounded-lg shadow font-semibold hover:border-blue-500"
+    animate-gradient-bg flex gap-2 items-center justify-center text-black text-sm px-5 py-2.5 rounded-lg shadow font-semibold hover:border-blue-500"
       >
-        Generate Tests
+        {loading && (
+          <img src="/spinner.svg" className="animate-spin w-5 h-5" alt="" />
+        )}
+        <p>Generate Tests</p>
       </button>
     </div>
   );

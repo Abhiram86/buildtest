@@ -5,10 +5,6 @@ import { githubMiddleware } from "./github.middleware";
 const githubRouter = express.Router();
 
 githubRouter.get("/repos", githubMiddleware, githubController.githubRepos);
-githubRouter.post(
-  "/repos/:repo",
-  //   githubMiddleware,
-  githubController.githubRepo
-);
+githubRouter.post("/repos/:repo", githubController.githubRepo);
 
 export default githubRouter;
