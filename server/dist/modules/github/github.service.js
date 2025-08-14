@@ -1,45 +1,36 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-export const getRepos = (username, accessToken) => __awaiter(void 0, void 0, void 0, function* () {
-    const resp = yield fetch(`https://api.github.com/users/${username}/repos`, {
+export const getRepos = async (username, accessToken) => {
+    const resp = await fetch(`https://api.github.com/users/${username}/repos`, {
         method: "GET",
         headers: {
             Authorization: `Bearer ${accessToken}`,
             Accept: "application/vnd.github.v3+json",
         },
     });
-    return yield resp.json();
-});
-export const getRepo = (owner, repo, defaultBranch, accessToken) => __awaiter(void 0, void 0, void 0, function* () {
+    return await resp.json();
+};
+export const getRepo = async (owner, repo, defaultBranch, accessToken) => {
     try {
         const headers = {
             Accept: "application/vnd.github.v3+json",
         };
         accessToken.length > 0 &&
             (headers.Authorization = `Bearer ${accessToken}`);
-        const branchResp = yield fetch(`https://api.github.com/repos/${owner}/${repo}/branches/${defaultBranch}`, {
+        const branchResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches/${defaultBranch}`, {
             headers,
         });
         if (!branchResp.ok) {
             throw new Error(`Branch not found: ${branchResp.status} ${branchResp.statusText}`);
         }
-        const branchData = yield branchResp.json();
+        const branchData = await branchResp.json();
         const treeSha = branchData.commit.commit.tree.sha;
         // Fetch tree recursively
-        const treeResp = yield fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${treeSha}?recursive=1`, {
+        const treeResp = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${treeSha}?recursive=1`, {
             headers,
         });
         if (!treeResp.ok) {
             throw new Error(`Failed to fetch tree: ${treeResp.status} ${treeResp.statusText}`);
         }
-        const treeData = yield treeResp.json();
+        const treeData = await treeResp.json();
         const root = {
             type: "tree",
             name: "/",
@@ -73,4 +64,4 @@ export const getRepo = (owner, repo, defaultBranch, accessToken) => __awaiter(vo
             throw error;
         throw new Error(String(error));
     }
-});
+};

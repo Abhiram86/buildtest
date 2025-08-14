@@ -1,12 +1,3 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 import Groq from "groq-sdk";
 import dotenv from "dotenv";
 import crypto from "crypto";
@@ -32,81 +23,77 @@ export function decrypt(encryptedData) {
     decrypted += decipher.final("utf8");
     return decrypted;
 }
-export function getFileContent(owner, repo, path, accessToken) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const resp = yield fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                Accept: "application/vnd.github.v3+json",
-            },
-        });
-        if (!resp.ok) {
-            console.log(resp.status, resp.statusText);
-            throw new Error(resp.statusText);
-        }
-        const text = yield resp.text();
-        return {
-            path,
-            content: text,
-        };
+export async function getFileContent(owner, repo, path, accessToken) {
+    const resp = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: "application/vnd.github.v3+json",
+        },
     });
+    if (!resp.ok) {
+        console.log(resp.status, resp.statusText);
+        throw new Error(resp.statusText);
+    }
+    const text = await resp.text();
+    return {
+        path,
+        content: text,
+    };
 }
-export function generateTest(query) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return groq.chat.completions.create({
-            model: "moonshotai/kimi-k2-instruct",
-            messages: [
-                { role: "system", content: process.env.SYSTEM_PROMPT },
-                {
-                    role: "user",
-                    content: "Generate a test suite well formatted in markdown for the following code: " +
-                        query,
-                },
-            ],
-            response_format: {
-                type: "json_schema",
-                json_schema: {
-                    name: "test_suite_generator",
-                    schema: {
-                        type: "object",
-                        properties: {
-                            description: {
-                                type: "string",
-                                description: "Clear natural-language and strong explanation of what the tests cover and why specific cases/assertions were chosen. Can be multiple paragraphs, bullet points, or a short summary.",
-                            },
-                            test_suite: {
-                                type: "object",
-                                description: "The generated test suite, containing the programming language, testing framework, and complete code snippet.",
-                                properties: {
-                                    language: {
-                                        type: "string",
-                                        enum: [
-                                            "python",
-                                            "javascript",
-                                            "typescript",
-                                            "java",
-                                            "go",
-                                            "ruby",
-                                            "php",
-                                            "rust",
-                                            "csharp",
-                                            "kotlin",
-                                        ],
-                                    },
-                                    framework: { type: "string" },
-                                    code: {
-                                        type: "string",
-                                        description: "The complete test code in the specified language/framework, as a single snippet.",
-                                    },
-                                },
-                                required: ["language", "framework", "code"],
-                            },
+export async function generateTest(query) {
+    return groq.chat.completions.create({
+        model: "moonshotai/kimi-k2-instruct",
+        messages: [
+            { role: "system", content: process.env.SYSTEM_PROMPT },
+            {
+                role: "user",
+                content: "Generate a test suite well formatted in markdown for the following code: " +
+                    query,
+            },
+        ],
+        response_format: {
+            type: "json_schema",
+            json_schema: {
+                name: "test_suite_generator",
+                schema: {
+                    type: "object",
+                    properties: {
+                        description: {
+                            type: "string",
+                            description: "Clear natural-language and strong explanation of what the tests cover and why specific cases/assertions were chosen. Can be multiple paragraphs, bullet points, or a short summary.",
                         },
-                        required: ["description", "test_suite"],
+                        test_suite: {
+                            type: "object",
+                            description: "The generated test suite, containing the programming language, testing framework, and complete code snippet.",
+                            properties: {
+                                language: {
+                                    type: "string",
+                                    enum: [
+                                        "python",
+                                        "javascript",
+                                        "typescript",
+                                        "java",
+                                        "go",
+                                        "ruby",
+                                        "php",
+                                        "rust",
+                                        "csharp",
+                                        "kotlin",
+                                    ],
+                                },
+                                framework: { type: "string" },
+                                code: {
+                                    type: "string",
+                                    description: "The complete test code in the specified language/framework, as a single snippet.",
+                                },
+                            },
+                            required: ["language", "framework", "code"],
+                        },
                     },
+                    required: ["description", "test_suite"],
                 },
             },
-        });
+        },
     });
 }
