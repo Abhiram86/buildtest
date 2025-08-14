@@ -1,9 +1,10 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { getIronSession } from "iron-session";
 import authRouter from "./modules/auth/auth.routes";
 import { connectDB } from "./config/db";
-import session from "express-session";
+// import session from "express-session";
 import githubRouter from "./modules/github/github.routes";
 import testsRouter from "./modules/test_generator/tests.routes";
 
@@ -20,20 +21,36 @@ app.use(
 );
 app.use(express.json());
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET!,
-    resave: false,
-    saveUninitialized: false,
-    name: "sid",
-    cookie: {
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-      httpOnly: true,
-    },
-  })
-);
+const sessionOptions = {
+  password: process.env.SESSION_SECRET,
+  cookieName: "sid",
+  cookieOptions: {
+    secure: process.env.NODE_ENV === "production",
+    httponly: true,
+    sameSite: "lax",
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  },
+};
+
+app.use(async (req, res, next) => {
+  req.session = await getIronSession(req, res, sessionOptions);
+  next();
+});
+
+// app.use(
+//   session({
+//     secret: process.env.SESSION_SECRET!,
+//     resave: false,
+//     saveUninitialized: false,
+//     name: "sid",
+//     cookie: {
+//       sameSite: "lax",
+//       secure: process.env.NODE_ENV === "production",
+//       maxAge: 1000 * 60 * 60 * 24 * 7,
+//       httpOnly: true,
+//     },
+//   })
+// );
 
 app.use((req, _res, next) => {
   console.log(req.method, req.url);
