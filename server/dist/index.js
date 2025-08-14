@@ -1,25 +1,20 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const auth_routes_1 = __importDefault(require("./modules/auth/auth.routes"));
-const db_1 = require("./config/db");
-const express_session_1 = __importDefault(require("express-session"));
-const github_routes_1 = __importDefault(require("./modules/github/github.routes"));
-const tests_routes_1 = __importDefault(require("./modules/test_generator/tests.routes"));
-dotenv_1.default.config();
-const app = (0, express_1.default)();
-(0, db_1.connectDB)();
-app.use((0, cors_1.default)({
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import authRouter from "./modules/auth/auth.routes";
+import { connectDB } from "./config/db";
+import session from "express-session";
+import githubRouter from "./modules/github/github.routes";
+import testsRouter from "./modules/test_generator/tests.routes";
+dotenv.config();
+const app = express();
+connectDB();
+app.use(cors({
     origin: process.env.CLIENT_URL,
     credentials: true,
 }));
-app.use(express_1.default.json());
-app.use((0, express_session_1.default)({
+app.use(express.json());
+app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
@@ -35,9 +30,9 @@ app.use((req, _res, next) => {
     console.log(req.method, req.url);
     next();
 });
-app.use("/auth", auth_routes_1.default);
-app.use("/github", github_routes_1.default);
-app.use("/tests", tests_routes_1.default);
+app.use("/auth", authRouter);
+app.use("/github", githubRouter);
+app.use("/tests", testsRouter);
 app.get("/", (_req, res) => {
     res.send("Hello World!");
 });

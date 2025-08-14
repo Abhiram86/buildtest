@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,39 +7,32 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateTest = exports.getFileContent = exports.decrypt = exports.encrypt = void 0;
-const groq_sdk_1 = __importDefault(require("groq-sdk"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const crypto_1 = __importDefault(require("crypto"));
-dotenv_1.default.config();
-const groq = new groq_sdk_1.default({
+import Groq from "groq-sdk";
+import dotenv from "dotenv";
+import crypto from "crypto";
+dotenv.config();
+const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY,
 });
-function encrypt(text) {
-    const iv = crypto_1.default.randomBytes(Number(process.env.IV_LENGTH));
-    const cipher = crypto_1.default.createCipheriv("aes-256-gcm", Buffer.from(process.env.ENCRYPTION_KEY, "base64"), iv);
+export function encrypt(text) {
+    const iv = crypto.randomBytes(Number(process.env.IV_LENGTH));
+    const cipher = crypto.createCipheriv("aes-256-gcm", Buffer.from(process.env.ENCRYPTION_KEY, "base64"), iv);
     let encrypted = cipher.update(text, "utf8", "hex");
     encrypted += cipher.final("hex");
     const authTag = cipher.getAuthTag().toString("hex");
     return `${iv.toString("hex")}:${encrypted}:${authTag}`;
 }
-exports.encrypt = encrypt;
-function decrypt(encryptedData) {
+export function decrypt(encryptedData) {
     const [ivHex, encrypted, authTagHex] = encryptedData.split(":");
     const iv = Buffer.from(ivHex, "hex");
     const authTag = Buffer.from(authTagHex, "hex");
-    const decipher = crypto_1.default.createDecipheriv("aes-256-gcm", Buffer.from(process.env.ENCRYPTION_KEY, "base64"), iv);
+    const decipher = crypto.createDecipheriv("aes-256-gcm", Buffer.from(process.env.ENCRYPTION_KEY, "base64"), iv);
     decipher.setAuthTag(authTag);
     let decrypted = decipher.update(encrypted, "hex", "utf8");
     decrypted += decipher.final("utf8");
     return decrypted;
 }
-exports.decrypt = decrypt;
-function getFileContent(owner, repo, path, accessToken) {
+export function getFileContent(owner, repo, path, accessToken) {
     return __awaiter(this, void 0, void 0, function* () {
         const resp = yield fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
             method: "GET",
@@ -60,8 +52,7 @@ function getFileContent(owner, repo, path, accessToken) {
         };
     });
 }
-exports.getFileContent = getFileContent;
-function generateTest(query) {
+export function generateTest(query) {
     return __awaiter(this, void 0, void 0, function* () {
         return groq.chat.completions.create({
             model: "moonshotai/kimi-k2-instruct",
@@ -119,4 +110,3 @@ function generateTest(query) {
         });
     });
 }
-exports.generateTest = generateTest;
