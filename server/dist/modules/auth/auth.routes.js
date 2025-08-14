@@ -1,5 +1,5 @@
 import express from "express";
-import * as authController from "./auth.controller";
+import * as authController from "./auth.controller.js";
 const authRouter = express.Router();
 authRouter.get("/github", authController.githubOauth);
 authRouter.get("/github/callback", authController.callback);

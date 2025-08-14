@@ -1,7 +1,7 @@
 import * as arctic from "arctic";
-import { github } from "../../config/github";
-import { User } from "../../database/models/user.model";
-import { encrypt } from "../../common/utils";
+import { github } from "../../config/github.js";
+import { User } from "../../database/models/user.model.js";
+import { encrypt } from "../../common/utils.js";
 export const githubOauth = (req) => {
     const state = arctic.generateState();
     req.session.oauthState = state;

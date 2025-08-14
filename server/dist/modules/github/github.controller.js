@@ -1,6 +1,6 @@
-import * as githubService from "./github.service";
-import { User } from "../../database/models/user.model";
-import { decrypt } from "../../common/utils";
+import * as githubService from "./github.service.js";
+import { User } from "../../database/models/user.model.js";
+import { decrypt } from "../../common/utils.js";
 export const githubRepos = async (req, res) => {
     const user = await User.findById(req.session.userId);
     const fields = req.query.fields;

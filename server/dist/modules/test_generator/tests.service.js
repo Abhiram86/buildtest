@@ -1,5 +1,5 @@
-import { generateTest, getFileContent } from "../../common/utils";
-import { Test } from "../../database/models/tests.model";
+import { generateTest, getFileContent } from "../../common/utils.js";
+import { Test } from "../../database/models/tests.model.js";
 export const getTest = async (userId, repo) => {
     const test = await Test.findOne({ user: userId, repo });
     if (!test)

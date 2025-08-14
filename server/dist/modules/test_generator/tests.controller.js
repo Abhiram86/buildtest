@@ -1,6 +1,6 @@
-import * as testService from "./tests.service";
-import { User } from "../../database/models/user.model";
-import { decrypt } from "../../common/utils";
+import * as testService from "./tests.service.js";
+import { User } from "../../database/models/user.model.js";
+import { decrypt } from "../../common/utils.js";
 export const getTest = async (req, res) => {
     const userId = req.session.userId;
     const repo = req.params.repo;

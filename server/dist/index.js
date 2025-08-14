@@ -1,11 +1,11 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import authRouter from "./modules/auth/auth.routes";
-import { connectDB } from "./config/db";
+import authRouter from "./modules/auth/auth.routes.js";
+import { connectDB } from "./config/db.js";
 import session from "express-session";
-import githubRouter from "./modules/github/github.routes";
-import testsRouter from "./modules/test_generator/tests.routes";
+import githubRouter from "./modules/github/github.routes.js";
+import testsRouter from "./modules/test_generator/tests.routes.js";
 dotenv.config();
 const app = express();
 connectDB();

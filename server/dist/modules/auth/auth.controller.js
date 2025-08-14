@@ -1,4 +1,4 @@
-import * as authService from "./auth.service";
+import * as authService from "./auth.service.js";
 export const githubOauth = (req, res) => {
     const url = authService.githubOauth(req);
     res.redirect(url.toString());
