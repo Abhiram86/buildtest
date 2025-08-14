@@ -18,7 +18,10 @@ export const githubRepos = async (req, res) => {
     });
 };
 export const githubRepo = async (req, res) => {
-    const user = await User.findById(req.session.userId || null);
+    let user = null;
+    if (req.session.userId) {
+        user = await User.findById(req.session.userId);
+    }
     const defaultBranch = req.body.ref || "main";
     // if (!user) return res.status(404).send("User not found");
     const path = req.body.path;
