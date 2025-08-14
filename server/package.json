@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node-dev --respawn index.ts",
-    "build": "tsc && fix_esm_import.cjs",
+    "build": "tsc && node fix_esm_import.cjs",
     "start": "node dist/index.js"
   },
   "keywords": [],

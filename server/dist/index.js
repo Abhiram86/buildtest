@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+// import { getIronSession } from "iron-session";
 import authRouter from "./modules/auth/auth.routes.js";
 import { connectDB } from "./config/db.js";
 import session from "express-session";
@@ -14,6 +15,21 @@ app.use(cors({
     credentials: true,
 }));
 app.use(express.json());
+// const sessionOptions = {
+//   password: process.env.SESSION_SECRET,
+//   cookieName: "sid",
+//   cookieOptions: {
+//     secure: process.env.NODE_ENV === "production",
+//     httponly: true,
+//     sameSite: "lax",
+//     maxAge: 1000 * 60 * 60 * 24 * 7,
+//   },
+// };
+// app.use(async (req, res, next) => {
+//   req.session = await getIronSession(req, res, sessionOptions);
+//   next();
+// });
+app.set("trust proxy", 1);
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
