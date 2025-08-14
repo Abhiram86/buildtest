@@ -60,17 +60,20 @@ function App() {
       };
 
       // Prepare both requests
-      const repoFetch = fetch(`http://localhost:8080/github/repos/${repo}`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
+      const repoFetch = fetch(
+        `${import.meta.env.VITE_API_URL}/github/repos/${repo}`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
 
       const secondFetch = user
-        ? fetch(`http://localhost:8080/tests/${repo}`, {
+        ? fetch(`${import.meta.env.VITE_API_URL}/tests/${repo}`, {
             method: "GET",
             credentials: "include",
             headers: {

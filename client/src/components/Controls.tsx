@@ -40,13 +40,16 @@ export const Controls = ({ repopath, ref, token, onLoad }: ControlsProps) => {
       setOpen(true);
       if (user) {
         try {
-          const resp = await fetch("http://localhost:8080/github/repos", {
-            method: "GET",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
+          const resp = await fetch(
+            `${import.meta.env.VITE_API_URL}/github/repos`,
+            {
+              method: "GET",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
           const data = await resp.json();
           setRepos(data.repos);
           console.log(data);
