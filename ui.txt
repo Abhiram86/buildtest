@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GitHub Repo File Explorer</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    :root{
+      --bg:#0b0e14; --bg-elev:#121723; --text:#e6e6e6; --muted:#b8c0cc; --accent:#7aa2f7; --border:#222a3a;
+      --chip:#1a2130; --link:#8ab4f8; --shadow-1:0 1px 2px rgba(0,0,0,.4), 0 4px 12px rgba(0,0,0,.25);
+      --shadow-2:0 2px 6px rgba(0,0,0,.45), 0 10px 24px rgba(0,0,0,.3);
+      --radius:12px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px; --space-6:32px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Inter, Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    [data-theme="light"]{
+      --bg:#ffffff; --bg-elev:#f6f8fa; --text:#0c1116; --muted:#4f5b66; --accent:#2854d6; --border:#e6e8eb;
+      --chip:#eef2f6; --link:#0b57d0; --shadow-1:0 1px 2px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.06);
+      --shadow-2:0 2px 6px rgba(0,0,0,.08), 0 10px 24px rgba(0,0,0,.08);
+    }
+    html,body{height:100%; background:var(--bg); color:var(--text); font-family:var(--font); line-height:1.55;}
+    .container{max-width:1100px; margin:0 auto; padding: var(--space-6) var(--space-5);}
+    header{display:flex; flex-direction:column; gap:var(--space-3); margin-bottom:var(--space-5);}
+    .title{font-weight:800; letter-spacing:-0.01em; font-size: clamp(20px,2.5vw,28px);}
+    .controls{display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center;}
+    .field{display:flex; align-items:center; gap:8px; background:var(--bg-elev); border:1px solid var(--border);
+      padding:10px 12px; border-radius:10px; box-shadow:var(--shadow-1);}
+    .field input{background:transparent; border:none; outline:none; color:var(--text);}
+    .btn{border:1px solid var(--border); background:var(--bg-elev); color:var(--text); padding:10px 14px;
+      border-radius:10px; cursor:pointer; box-shadow:var(--shadow-1); font-weight:600;}
+    .btn:hover{border-color:var(--accent)}
+    .toggle{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px;
+      background:var(--bg-elev); border:1px solid var(--border); box-shadow:var(--shadow-1); cursor:pointer;}
+    .notice{padding:12px 14px; background:var(--bg-elev); border:1px dashed var(--border); border-radius:10px; color:var(--muted);}
+    .status{margin-top:var(--space-3); color:var(--muted);}
+
+    /* Tree */
+    .panel{background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-2);}
+    .panel-head{display:flex; justify-content:space-between; align-items:center; padding:14px var(--space-4); border-bottom:1px solid var(--border);}
+    .repo-meta{display:flex; gap:12px; align-items:center; color:var(--muted); font-size:14px;}
+    .tree{padding:10px var(--space-4) var(--space-4) var(--space-4);}
+    .node{display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; cursor:default; user-select:none;}
+    .node:hover{background:rgba(127,127,127,.08);}
+    .node .label{display:flex; align-items:center; gap:8px; flex:1; min-width:0;}
+    .name{font-family:var(--mono); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    .size{color:var(--muted); font-size:12px;}
+    .links{display:flex; gap:10px; align-items:center; font-size:12px;}
+    .caret{width:1em; display:inline-flex; align-items:center; justify-content:center; color:var(--muted);}
+    .icon{width:16px; height:16px; display:inline-block;}
+    .folder{color:#e3b341;}
+    .file{color:#9bbcff;}
+    .symlink{color:#76d275;}
+    .list{margin-left:20px; border-left:1px dashed var(--border); padding-left:10px;}
+    .hidden{display:none;}
+    a{color:var(--link); text-decoration:none;}
+    a:hover{text-decoration:underline;}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,1px,1px);white-space:nowrap;border:0;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title">GitHub File Explorer (Collapsible Tree)</div>
+      <div class="notice">Enter a repository as owner/repo (e.g., torvalds/linux). Optional: add a token to increase rate limits. This uses the Git Trees API to fetch the full recursive file list.</div>
+      <div class="controls">
+        <label class="field" title="owner/repo">
+          <span>Repo</span>
+          <input id="repopath" type="text" placeholder="owner/repo" />
+        </label>
+        <label class="field" title="Branch or commit SHA (optional)">
+          <span>Ref</span>
+          <input id="ref" type="text" placeholder="main (optional)" />
+        </label>
+        <label class="field" title="Optional: GitHub token">
+          <span class="sr-only">Token</span>
+          <input id="token" type="password" placeholder="token (optional)" />
+        </label>
+        <button id="load" class="btn">Load Tree</button>
+        <button id="toggleTheme" class="toggle" type="button" aria-pressed="true"><span>Dark</span></button>
+      </div>
+      <div id="status" class="status">No repository loaded.</div>
+    </header>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div id="repoTitle" class="repo-meta">—</div>
+        <div class="links" id="repoLinks"></div>
+      </div>
+      <div id="tree" class="tree" role="tree" aria-label="Repository file tree"></div>
+    </section>
+  </div>
+
+  <script>
+    const els = {
+      repopath: document.getElementById('repopath'),
+      ref: document.getElementById('ref'),
+      token: document.getElementById('token'),
+      status: document.getElementById('status'),
+      load: document.getElementById('load'),
+      toggleTheme: document.getElementById('toggleTheme'),
+      tree: document.getElementById('tree'),
+      repoTitle: document.getElementById('repoTitle'),
+      repoLinks: document.getElementById('repoLinks')
+    };
+
+    // Theme
+    const themeKey='gh-theme';
+    function applyTheme(t){
+      document.documentElement.setAttribute('data-theme', t);
+      els.toggleTheme.querySelector('span').textContent = t === 'dark' ? 'Dark' : 'Light';
+      els.toggleTheme.setAttribute('aria-pressed', t==='dark'?'true':'false');
+    }
+    applyTheme(localStorage.getItem(themeKey) || 'dark');
+    els.toggleTheme.addEventListener('click',()=>{
+      const c=document.documentElement.getAttribute('data-theme');
+      const n=c==='dark'?'light':'dark';
+      localStorage.setItem(themeKey,n); applyTheme(n);
+    });
+
+    function setStatus(msg){ els.status.textContent = msg; }
+    function escapeHTML(str){ return str.replace(/[&<>"']/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s])); }
+    function bytes(n){
+      if(n==null) return '';
+      const u=['B','KB','MB','GB','TB']; let i=0, x=n;
+      while(x>=1024 && i<u.length-1){ x/=1024; i++; }
+      return `${x.toFixed(x<10&&i>0?1:0)} ${u[i]}`;
+    }
+
+    // API helpers
+    function ghHeaders(token){
+      const h = { 'Accept':'application/vnd.github+json' };
+      if(token && token.trim()) h['Authorization'] = 'Bearer ' + token.trim();
+      return h;
+    }
+
+    async function fetchJSON(url, headers){
+      const res = await fetch(url, { headers });
+      if(res.status===403){
+        const reset = res.headers.get('x-ratelimit-reset');
+        const when = reset ? new Date(parseInt(reset,10)*1000) : null;
+        const msg = when ? `Rate limit exceeded. Try again at ${when.toLocaleTimeString()}.` : 'Rate limit exceeded.';
+        throw new Error(msg);
+      }
+      if(!res.ok){
+        let body=''; try{ body = await res.text(); }catch{}
+        throw new Error(`Error ${res.status}: ${body || res.statusText}`);
+      }
+      return res.json();
+    }
+
+    // Resolve default branch / commit
+    async function getRepo(owner, repo, token){
+      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
+      return fetchJSON(url, ghHeaders(token));
+    }
+    async function getTree(owner, repo, ref, token){
+      // Use recursive=1 for up to ~100k entries; if truncated, fallback to chunk listing via contents API
+      const treeURL = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/trees/${encodeURIComponent(ref)}?recursive=1`;
+      const data = await fetchJSON(treeURL, ghHeaders(token));
+      return data; // { tree: [...], truncated: boolean }
+    }
+
+    // Build nested structure
+    function buildTree(entries){
+      const root = { type:'tree', name:'/', path:'', children:new Map() };
+      for(const e of entries){
+        const parts = e.path.split('/');
+        let cur = root;
+        for(let i=0;i<parts.length;i++){
+          const part = parts[i];
+          const isLeaf = i===parts.length-1;
+          if(isLeaf){
+            if(e.type === 'tree'){
+              cur.children.set(part, { type:'tree', name:part, path:e.path, children:new Map() });
+            }else{
+              cur.children.set(part, { type:e.type, name:part, path:e.path, size:e.size ?? null, sha:e.sha, url:e.url });
+            }
+          }else{
+            if(!cur.children.has(part)){
+              const accPath = parts.slice(0,i+1).join('/');
+              cur.children.set(part, { type:'tree', name:part, path:accPath, children:new Map() });
+            }
+            cur = cur.children.get(part);
+          }
+        }
+      }
+      return root;
+    }
+
+    // Render tree
+    function icon(type){
+      if(type==='tree') return `<span class="icon folder">📁</span>`;
+      if(type==='symlink') return `<span class="icon symlink">🔗</span>`;
+      return `<span class="icon file">📄</span>`;
+    }
+    function caret(open){ return `<span class="caret" aria-hidden="true">${open?'▾':'▸'}</span>`; }
+
+    function renderNode(node, owner, repo, defaultBranch){
+      const hasChildren = node.type==='tree' && node.children && node.children.size>0;
+      const li = document.createElement('div');
+      li.className = 'list';
+      const row = document.createElement('div');
+      row.className = 'node';
+      row.setAttribute('role','treeitem');
+      row.setAttribute('aria-expanded', hasChildren ? 'false' : 'true');
+      row.tabIndex = 0;
+
+      const label = document.createElement('div');
+      label.className = 'label';
+
+      // caret + icon + name
+      const caretWrap = document.createElement('span');
+      caretWrap.innerHTML = hasChildren ? caret(false) : '<span class="caret"></span>';
+      label.appendChild(caretWrap);
+
+      const iconWrap = document.createElement('span');
+      iconWrap.innerHTML = icon(node.type);
+      label.appendChild(iconWrap);
+
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = node.name === '/' ? `${repo} @ ${defaultBranch}` : node.name;
+      label.appendChild(name);
+
+      row.appendChild(label);
+
+      const trailing = document.createElement('div');
+      trailing.className = 'links';
+      if(node.type!=='tree' && node.size!=null){
+        const size = document.createElement('span');
+        size.className = 'size';
+        size.textContent = bytes(node.size);
+        trailing.appendChild(size);
+      }
+      // Links
+      const gh = document.createElement('a');
+      gh.target = '_blank'; gh.rel='noopener noreferrer';
+      gh.textContent = 'GitHub';
+      gh.href = node.type==='tree'
+        ? `https://github.com/${owner}/${repo}/tree/${encodeURIComponent(defaultBranch)}/${node.path}`
+        : `https://github.com/${owner}/${repo}/blob/${encodeURIComponent(defaultBranch)}/${node.path}`;
+      trailing.appendChild(gh);
+
+      if(node.type!=='tree'){
+        const raw = document.createElement('a');
+        raw.target='_blank'; raw.rel='noopener noreferrer'; raw.textContent='Raw';
+        raw.href = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(defaultBranch)}/${node.path}`;
+        trailing.appendChild(raw);
+      }
+
+      row.appendChild(trailing);
+
+      const childrenWrap = document.createElement('div');
+      childrenWrap.className = 'list hidden';
+      childrenWrap.setAttribute('role','group');
+
+      if(hasChildren){
+        // Sort: folders first then files, alpha
+        const entries = Array.from(node.children.values()).sort((a,b)=>{
+          if(a.type===b.type) return a.name.localeCompare(b.name);
+          return a.type==='tree' ? -1 : 1;
+        });
+        for(const child of entries){
+          const rendered = renderNode(child, owner, repo, defaultBranch);
+          childrenWrap.appendChild(rendered.container);
+        }
+      }
+
+      // Toggle open/close
+      function toggle(){
+        if(!hasChildren) return;
+        const open = childrenWrap.classList.contains('hidden');
+        childrenWrap.classList.toggle('hidden');
+        row.setAttribute('aria-expanded', open ? 'true':'false');
+        caretWrap.innerHTML = caret(open);
+      }
+      if(hasChildren){
+        row.addEventListener('click', (e)=>{
+          // allow link clicks without toggling
+          if(e.target.tagName.toLowerCase()==='a') return;
+          toggle();
+        });
+        row.addEventListener('keydown', (e)=>{
+          if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggle(); }
+          if(e.key==='ArrowRight'){ if(childrenWrap.classList.contains('hidden')) toggle(); }
+          if(e.key==='ArrowLeft'){ if(!childrenWrap.classList.contains('hidden')) toggle(); }
+        });
+      }
+
+      const container = document.createElement('div');
+      container.appendChild(row);
+      if(hasChildren) container.appendChild(childrenWrap);
+      return { container, row, childrenWrap };
+    }
+
+    function renderTree(root, owner, repo, defaultBranch){
+      els.tree.innerHTML = '';
+      const rendered = renderNode(root, owner, repo, defaultBranch);
+      // Expand the top-level one level by default
+      if(rendered.childrenWrap){
+        rendered.childrenWrap.classList.remove('hidden');
+        rendered.row.setAttribute('aria-expanded','true');
+        rendered.row.querySelector('.caret').textContent = '▾';
+      }
+      els.tree.appendChild(rendered.container);
+    }
+
+    async function loadRepo(){
+      const path = els.repopath.value.trim();
+      const token = els.token.value.trim();
+      const refInput = els.ref.value.trim();
+      if(!path || !path.includes('/')){
+        setStatus('Please enter repository as owner/repo.');
+        return;
+      }
+      const [owner, repo] = path.split('/',2);
+      setStatus('Loading repository info...');
+      els.repoTitle.textContent = '—';
+      els.repoLinks.innerHTML = '';
+      els.tree.innerHTML = '';
+
+      try{
+        const repoData = await getRepo(owner, repo, token);
+        const defaultBranch = refInput || repoData.default_branch || 'main';
+        els.repoTitle.innerHTML = `
+          <strong>${escapeHTML(owner)}/${escapeHTML(repo)}</strong>
+          <span>•</span>
+          <span>branch: ${escapeHTML(defaultBranch)}</span>
+          <span>•</span>
+          <span>${repoData.private ? 'Private' : 'Public'}</span>
+        `;
+        els.repoLinks.innerHTML = `
+          <a target="_blank" rel="noopener noreferrer" href="${repoData.html_url}">Open on GitHub</a>
+        `;
+
+        setStatus('Fetching tree (recursive)...');
+        const treeData = await getTree(owner, repo, defaultBranch, token);
+
+        let entries = Array.isArray(treeData.tree) ? treeData.tree : [];
+        // Filter to files/dirs/symlinks only
+        entries = entries.filter(e => e.type==='blob' || e.type==='tree' || e.type==='symlink');
+
+        // If truncated, we still render what we have. Optionally we could fall back to directory-by-directory loading.
+        if(treeData.truncated){
+          setStatus('Warning: Tree truncated by GitHub API. Showing partial results. Consider narrowing by directory or using a server-side proxy.');
+        }else{
+          setStatus(`Loaded ${entries.length.toLocaleString()} entries.`);
+        }
+
+        const root = buildTree(entries);
+        root.name = '/';
+        root.path = '';
+        renderTree(root, owner, repo, defaultBranch);
+      }catch(err){
+        setStatus(err.message || 'Failed to load repository.');
+      }
+    }
+
+    // Load via Enter
+    [els.repopath, els.ref, els.token].forEach(i=>{
+      i.addEventListener('keyup', e => { if(e.key==='Enter') els.load.click(); });
+    });
+    els.load.addEventListener('click', loadRepo);
+  </script>
+</body>
+</html>
